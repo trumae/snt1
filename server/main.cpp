@@ -5,6 +5,7 @@
 #include <boost/asio.hpp>
 
 using boost::asio::ip::tcp;
+using namespace std;
 
 class session
         : public std::enable_shared_from_this<session>{
@@ -13,15 +14,36 @@ public:
         : socket_(std::move(socket)){}
 
     void start() {
+        line_ = "";
         do_read();
     }
 
 private:
+    void handle_line() {
+        cout << line_ << endl;
+    }
+
     void do_read()   {
         auto self(shared_from_this());
         socket_.async_read_some(boost::asio::buffer(data_, max_length),
                                 [this, self](boost::system::error_code ec, std::size_t length){
             if (!ec){
+                for(std::size_t i = 0; i < length; i++) {
+                    char a = data_[i];
+                    if (a == '\0') {
+                        break;
+                    }
+                    if (a == '\n') {
+                        handle_line();
+                        ///cout << line_;
+                        line_ = "";
+                        continue;
+                    }
+                    line_ += a;
+                }
+
+                do_read();
+            } else {
                 do_write(length);
             }
         });
@@ -40,6 +62,7 @@ private:
     tcp::socket socket_;
     enum { max_length = 1024 };
     char data_[max_length];
+    string line_;
 };
 
 class server {

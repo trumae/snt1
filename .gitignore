@@ -33,3 +33,4 @@
 
 #ide
 CMakeLists.txt.user
+build/
