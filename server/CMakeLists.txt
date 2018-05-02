@@ -1,4 +1,6 @@
 add_executable(server
+   session.cpp
+   server.cpp
    main.cpp
 )
 

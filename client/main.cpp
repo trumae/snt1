@@ -12,7 +12,7 @@ using boost::asio::ip::tcp;
 
 enum { max_length = 1024 };
 
-const string server = "localhost";
+const string Server = "localhost";
 const string port = "1234";
 
 void put_text(string id, string filename)
@@ -27,7 +27,7 @@ void put_text(string id, string filename)
     boost::asio::io_service io_service;
     tcp::socket s(io_service);
     tcp::resolver resolver(io_service);
-    boost::asio::connect(s, resolver.resolve({server, port}));
+    boost::asio::connect(s, resolver.resolve({Server, port}));
 
     boost::asio::write(s, boost::asio::buffer("P\n", 2));
 
