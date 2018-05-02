@@ -3,12 +3,19 @@
 #include <memory>
 #include <utility>
 #include <boost/asio.hpp>
+#include <boost/uuid/uuid.hpp>
+#include <boost/uuid/uuid_generators.hpp>
+#include <boost/uuid/uuid_io.hpp>
+#include <boost/filesystem.hpp>
 #include <sstream>
 
 #define DEBUG true
 
 using boost::asio::ip::tcp;
 using namespace std;
+namespace fs = boost::filesystem;
+
+const string datadir = "data";
 
 class session
         : public std::enable_shared_from_this<session>{
@@ -22,25 +29,64 @@ public:
     }
 
 private:
+    string create_filename(string dir) {
+        int i = 0;
+
+        for (auto x : fs::directory_iterator(dir)) i++;
+
+        return std::to_string(i + 1);
+    }
+
+    void create_dir_if_not_exist(string dir)
+    {
+        if (!fs::is_directory(dir)) {
+            bool ok = fs::create_directory(dir);
+            if (!ok) {
+                cout << "Fail creating directory - " << dir;
+            }
+        }
+    }
+
+    void open_file()
+    {
+        create_dir_if_not_exist(datadir);
+
+        string dir = datadir + fs::path::preferred_separator + std::to_string(id_);
+        create_dir_if_not_exist(dir);
+
+        fname_ =  dir + fs::path::preferred_separator + create_filename(dir);
+        output_.open(fname_ , std::ios::binary);
+    }
+
     void handle_line() {
         stringstream ss;
         switch(status_) {
         case init:
+            if (line_ == "P") status_ = put;
+            if (line_ == "G") status_ = get;
+            if (line_ != "P" && line_ != "G") {
+                socket_.close();
+            }
+            break;
+        case put:
             ss.str(line_);
             ss >> id_ >> filesize_;
-
-            status_ = content;
+            open_file();
+            status_ = putcontent;
 
             break;
-        case content:
+        case putcontent:
             pos_ += line_.length() + 1;
 
             //process content
+            output_ << line_;
 
             if (pos_ >= filesize_) {
                 if (DEBUG) cout << "SENDING ACK " << pos_ << endl;
                 send_ack();
             }
+            break;
+        case get:
             break;
         }
 
@@ -58,7 +104,7 @@ private:
                         break;
                     }
                     if (a == '\n') {
-                        handle_line();                        
+                        handle_line();
                         continue;
                     }
                     line_ += a;
@@ -75,7 +121,7 @@ private:
                                  [this, self](boost::system::error_code ec, std::size_t t){
             if (!ec){
                 cout << ec << " " << t << endl;
-                //socket_.close();
+                output_.close();
             }
         });
     }
@@ -83,10 +129,11 @@ private:
     void send_fail(){
         auto self(shared_from_this());
         boost::asio::async_write(socket_, boost::asio::buffer("F", 1),
-                                 [this, self](boost::system::error_code ec, std::size_t t){
-            /*if (!ec){
-                do_read();
-            }*/
+                                 [this, self](boost::system::error_code ec, std::size_t){
+            if (!ec){
+                output_.close();
+                fs::remove(fname_);
+            }
         });
     }
 
@@ -94,13 +141,17 @@ private:
     enum { max_length = 1024 };
     enum {
         init,
-        content
+        get,
+        put,
+        putcontent
     } status_;
     char data_[max_length];
     string line_;
     size_t filesize_;
     size_t pos_;
     int id_;
+    ofstream output_;
+    string fname_;
 };
 
 class server {

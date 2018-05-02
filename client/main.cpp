@@ -15,7 +15,7 @@ enum { max_length = 1024 };
 const string server = "localhost";
 const string port = "1234";
 
-void putText(string id, string filename)
+void put_text(string id, string filename)
 {
     ifstream input(filename, std::ios::binary);
 
@@ -29,10 +29,11 @@ void putText(string id, string filename)
     tcp::resolver resolver(io_service);
     boost::asio::connect(s, resolver.resolve({server, port}));
 
-    stringstream ss;
-    ss << id << " " << boost::filesystem::file_size(filename) << endl;
+    boost::asio::write(s, boost::asio::buffer("P\n", 2));
 
     // send header
+    stringstream ss;
+    ss << id << " " << boost::filesystem::file_size(filename) << endl;
     string header = ss.str();
     boost::asio::write(s, boost::asio::buffer(header, header.length()));
 
@@ -57,7 +58,7 @@ void putText(string id, string filename)
     exit(0);
 }
 
-void getText() {
+void get_text() {
     cout << "getText" << endl;
     exit(0);
 }
@@ -75,7 +76,7 @@ int main(int argc, char* argv[]){
         if (argc == 2) {
             string cmd = argv[1];
             if (cmd == "get") {
-                getText();
+                get_text();
             }
         }
 
@@ -86,7 +87,7 @@ int main(int argc, char* argv[]){
                 string filename = argv[3];
 
                 // open file for reading
-                putText(id, filename);
+                put_text(id, filename);
             }
         }
 
