@@ -1,9 +1,9 @@
-* Dependencies
+# Dependencies
+ 
+* C++ 11
+* Boost 
 
-- C++ 11
-- Boost 
-
-* Build
+# Build
 
 ```
 mkdir build
@@ -12,15 +12,15 @@ cmake ..
 make -j 4
 ```
 
-* Running
+# Running
 
-** Server
+## Server
 
 ```
 server/server
 ```
 
-** Cliente
+## Cliente
 
 Put a text on database:
 ```
@@ -32,4 +32,6 @@ Get concatenated text:
 client/client get
 ```
 
+## License
 
+MIT
