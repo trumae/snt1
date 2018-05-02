@@ -59,13 +59,12 @@ void Session::handle_line() {
         ss >> id_ >> filesize_;
         open_file();
         status_ = putcontent;
-
         break;
     case putcontent:
         pos_ += line_.length() + 1;
 
         //process content
-        output_ << line_;
+        output_ << line_ << "\n";
 
         if (pos_ >= filesize_) {
             if (DEBUG) cout << "SENDING ACK " << pos_ << endl;
@@ -73,6 +72,7 @@ void Session::handle_line() {
         }
         break;
     case get:
+        fill_msgfilenames();
         break;
     }
 
@@ -88,12 +88,12 @@ void Session::do_read()   {
                 char a = data_[i];
                 if (a == '\0') {
                     break;
-                }
-                line_ += a;
+                }                
                 if (a == '\n') {
                     handle_line();
                     continue;
-                }                
+                }
+                line_ += a;
             }
 
             do_read();
@@ -122,4 +122,31 @@ void Session::send_fail(){
         }
     });
 }
+
+void Session::fill_msgfilenames() {
+    std::vector<int> vdir;
+
+    for (auto x : fs::directory_iterator(datadir)) {
+        vdir.push_back(std::stoi(x.path().filename().string()));
+    }
+    std::sort(vdir.begin(), vdir.end());
+
+    for(auto d: vdir) {
+        std::vector<int> vtmp;
+
+        for (auto f : fs::directory_iterator(datadir + fs::path::preferred_separator + std::to_string(d))) {
+            vtmp.push_back(std::stoi(f.path().filename().string()));
+        }
+        std::sort(vtmp.begin(), vtmp.end());
+
+
+        for (int i: vtmp) {
+            msgfilenames.push_back(std::to_string(d) + fs::path::preferred_separator + std::to_string(i));
+        }
+    }
+
+    for(auto m: msgfilenames)
+        cout << m << endl;
+}
+
 

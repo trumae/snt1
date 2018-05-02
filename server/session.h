@@ -27,6 +27,7 @@ private:
     void do_read();
     void send_ack();
     void send_fail();
+    void fill_msgfilenames();
 
     boost::asio::ip::tcp::socket socket_;
     enum { max_length = 1024 };
@@ -43,6 +44,7 @@ private:
     int id_;
     std::ofstream output_;
     std::string fname_;
+    std::vector<std::string> msgfilenames;
 };
 
 #endif

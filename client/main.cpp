@@ -59,7 +59,37 @@ void put_text(string id, string filename)
 }
 
 void get_text() {
-    cout << "getText" << endl;
+    boost::asio::io_service io_service;
+    tcp::socket s(io_service);
+    tcp::resolver resolver(io_service);
+    boost::asio::connect(s, resolver.resolve({Server, port}));
+
+    boost::asio::write(s, boost::asio::buffer("G\n", 2));
+    boost::asio::write(s, boost::asio::buffer("I\n", 2));
+/*    // send header
+    stringstream ss;
+    ss << id << " " << boost::filesystem::file_size(filename) << endl;
+    string header = ss.str();
+    boost::asio::write(s, boost::asio::buffer(header, header.length()));
+
+    // send content
+    char a;
+    string line;
+    while(input.read(&a, 1)) {
+        line += a;
+        if (a == '\n') {
+            size_t line_length = line.length();
+            size_t write_lenght = boost::asio::write(s, boost::asio::buffer(line, line_length));
+            if (DEBUG) cout << write_lenght << "|" << line ;
+            line = "";
+        }
+    }
+*/
+    cout <<  "Waiting ack" << endl;
+    char reply;
+    boost::asio::read(s, boost::asio::buffer(&reply, 1));
+    cout << "OK - Success" << endl;
+
     exit(0);
 }
 
