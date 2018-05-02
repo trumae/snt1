@@ -66,11 +66,17 @@ void get_text() {
 
     boost::asio::write(s, boost::asio::buffer("G\n", 2));
     boost::asio::write(s, boost::asio::buffer("I\n", 2));
-/*    // send header
-    stringstream ss;
-    ss << id << " " << boost::filesystem::file_size(filename) << endl;
-    string header = ss.str();
-    boost::asio::write(s, boost::asio::buffer(header, header.length()));
+
+    try {
+        char reply;
+        while(boost::asio::read(s, boost::asio::buffer(&reply, 1))) {
+            cout << reply;
+        }
+    } catch (std::exception& e) {
+        exit(0);
+    }
+
+    /*
 
     // send content
     char a;
@@ -85,11 +91,11 @@ void get_text() {
         }
     }
 */
-    cout <<  "Waiting ack" << endl;
+    /*    cout <<  "Waiting ack" << endl;
     char reply;
     boost::asio::read(s, boost::asio::buffer(&reply, 1));
     cout << "OK - Success" << endl;
-
+*/
     exit(0);
 }
 

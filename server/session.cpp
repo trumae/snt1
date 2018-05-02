@@ -1,5 +1,7 @@
 #include "session.h"
 
+#define DEBUG false
+
 using boost::asio::ip::tcp;
 using namespace std;
 namespace fs = boost::filesystem;
@@ -73,6 +75,7 @@ void Session::handle_line() {
         break;
     case get:
         fill_msgfilenames();
+        send_getcontent();
         break;
     }
 
@@ -141,12 +144,45 @@ void Session::fill_msgfilenames() {
 
 
         for (int i: vtmp) {
-            msgfilenames.push_back(std::to_string(d) + fs::path::preferred_separator + std::to_string(i));
+            msgfilenames_.push_back(datadir + fs::path::preferred_separator + std::to_string(d) +
+                                    fs::path::preferred_separator + std::to_string(i));
+        }
+    }
+    getindex_ = 0;
+
+    /*for(auto m: msgfilenames_)
+        cout << m << endl;*/
+}
+
+void Session::send_getcontent(){
+    auto self(shared_from_this());
+
+    if (fmsg_.eof()) fmsg_.close();
+
+    if (!fmsg_.is_open()) {
+        if( getindex_ < msgfilenames_.size() ) {
+            ///cout << "Open File: " << msgfilenames_[getindex_] << endl;
+            fmsg_.open(msgfilenames_[getindex_], std::ios::binary);
+            getindex_ ++;
+        } else {
+            socket_.close();
+            return;
         }
     }
 
-    for(auto m: msgfilenames)
-        cout << m << endl;
-}
+    char a;
+    string line;
+    while(fmsg_.read(&a, 1)) {
+        line += a;
+        if (a == '\n') break;
+    }
+    size_t line_length = line.length();
 
+    boost::asio::async_write(socket_, boost::asio::buffer(line, line_length),
+                             [this, self](boost::system::error_code ec, std::size_t){
+        if (!ec){
+            send_getcontent();
+        }
+    });
+}
 

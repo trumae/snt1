@@ -12,8 +12,6 @@
 #include <boost/filesystem.hpp>
 #include <sstream>
 
-#define DEBUG true
-
 class Session
         : public std::enable_shared_from_this<Session>{
 public:
@@ -25,6 +23,7 @@ private:
     void open_file();
     void handle_line();
     void do_read();
+    void send_getcontent();
     void send_ack();
     void send_fail();
     void fill_msgfilenames();
@@ -33,7 +32,7 @@ private:
     enum { max_length = 1024 };
     enum {
         init,
-        get,
+        get,        
         put,
         putcontent
     } status_;
@@ -44,7 +43,10 @@ private:
     int id_;
     std::ofstream output_;
     std::string fname_;
-    std::vector<std::string> msgfilenames;
+
+    std::vector<std::string> msgfilenames_;
+    std::size_t getindex_;
+    std::ifstream fmsg_;
 };
 
 #endif
