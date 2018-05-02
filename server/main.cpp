@@ -79,7 +79,7 @@ private:
             pos_ += line_.length() + 1;
 
             //process content
-            output_ << line_;
+            output_ << line_ << "\n";
 
             if (pos_ >= filesize_) {
                 if (DEBUG) cout << "SENDING ACK " << pos_ << endl;
