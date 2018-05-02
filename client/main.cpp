@@ -3,6 +3,9 @@
 #include <iostream>
 #include <fstream>
 #include <boost/asio.hpp>
+#include <boost/filesystem.hpp>
+
+#define DEBUG true
 
 using namespace std;
 using boost::asio::ip::tcp;
@@ -35,7 +38,14 @@ int main(int argc, char* argv[]){
         tcp::resolver resolver(io_service);
         boost::asio::connect(s, resolver.resolve({server, port}));
 
+        stringstream ss;
+        ss << id << " " << boost::filesystem::file_size(filename) << endl;
 
+        // send header
+        string header = ss.str();
+        boost::asio::write(s, boost::asio::buffer(header, header.length()));
+
+        // send content
         char a;
         string line;
         while(input.read(&a, 1)) {
@@ -43,27 +53,16 @@ int main(int argc, char* argv[]){
             if (a == '\n') {
                 size_t line_length = line.length();
                 size_t write_lenght = boost::asio::write(s, boost::asio::buffer(line, line_length));
-                cout << line ;
+                if (DEBUG) cout << write_lenght << "|" << line ;
                 line = "";
             }
         }
 
-       /* for (std::array<char, max_length + 1> a; input.getline(&a[0], max_length); ) {
-            string line = &a[0];
-            line += '\n';
-            size_t line_length = line.length();
+        cout <<  "Waiting ack" << endl;
+        char reply;
+        boost::asio::read(s, boost::asio::buffer(&reply, 1));
+        cout << "OK" << endl;
 
-            size_t write_lenght = boost::asio::write(s, boost::asio::buffer(line, line_length));
-
-            cout << line_length << " " << write_lenght << "|" << line ;
-        }*/
-
-/*        char reply[max_length];
-        size_t reply_length = boost::asio::read(s, boost::asio::buffer(reply, request_length));
-        std::cout << "Reply is: ";
-        std::cout.write(reply, reply_length);
-        std::cout << "\n";
-*/
     } catch (std::exception& e) {
         std::cerr << "Exception: " << e.what() << "\n";
     }

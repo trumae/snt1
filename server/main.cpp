@@ -3,6 +3,9 @@
 #include <memory>
 #include <utility>
 #include <boost/asio.hpp>
+#include <sstream>
+
+#define DEBUG true
 
 using boost::asio::ip::tcp;
 using namespace std;
@@ -11,7 +14,7 @@ class session
         : public std::enable_shared_from_this<session>{
 public:
     session(tcp::socket socket)
-        : socket_(std::move(socket)){}
+        : socket_(std::move(socket)), status_(init), pos_(0){}
 
     void start() {
         line_ = "";
@@ -20,7 +23,28 @@ public:
 
 private:
     void handle_line() {
-        cout << line_ << endl;
+        stringstream ss;
+        switch(status_) {
+        case init:
+            ss.str(line_);
+            ss >> id_ >> filesize_;
+
+            status_ = content;
+
+            break;
+        case content:
+            pos_ += line_.length() + 1;
+
+            //process content
+
+            if (pos_ >= filesize_) {
+                if (DEBUG) cout << "SENDING ACK " << pos_ << endl;
+                send_ack();
+            }
+            break;
+        }
+
+        line_ = "";
     }
 
     void do_read()   {
@@ -34,35 +58,49 @@ private:
                         break;
                     }
                     if (a == '\n') {
-                        handle_line();
-                        ///cout << line_;
-                        line_ = "";
+                        handle_line();                        
                         continue;
                     }
                     line_ += a;
                 }
 
                 do_read();
-            } else {
-                do_write(length);
             }
         });
     }
 
-    void do_write(std::size_t length){
+    void send_ack(){
         auto self(shared_from_this());
-        boost::asio::async_write(socket_, boost::asio::buffer(data_, length),
-                                 [this, self](boost::system::error_code ec, std::size_t /*length*/){
+        boost::asio::async_write(socket_, boost::asio::buffer("A", 1),
+                                 [this, self](boost::system::error_code ec, std::size_t t){
             if (!ec){
-                do_read();
+                cout << ec << " " << t << endl;
+                //socket_.close();
             }
+        });
+    }
+
+    void send_fail(){
+        auto self(shared_from_this());
+        boost::asio::async_write(socket_, boost::asio::buffer("F", 1),
+                                 [this, self](boost::system::error_code ec, std::size_t t){
+            /*if (!ec){
+                do_read();
+            }*/
         });
     }
 
     tcp::socket socket_;
     enum { max_length = 1024 };
+    enum {
+        init,
+        content
+    } status_;
     char data_[max_length];
     string line_;
+    size_t filesize_;
+    size_t pos_;
+    int id_;
 };
 
 class server {
