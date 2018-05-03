@@ -12,12 +12,16 @@ const string datadir = "data";
 Session::Session(tcp::socket socket)
     : socket_(std::move(socket)), status_(init), pos_(0){}
 
+/*! \brief start session
+ */
 void Session::start() {
     line_ = "";
     create_dir_if_not_exist(datadir);
     do_read();
 }
 
+/*! \brief create new filename on dir
+ */
 string Session::create_filename(string dir) {
     int i = 0;
 
@@ -26,6 +30,9 @@ string Session::create_filename(string dir) {
     return std::to_string(i + 1);
 }
 
+
+/*! \brief create an new directory if not exist
+ */
 void Session::create_dir_if_not_exist(string dir) {
     if (!fs::is_directory(dir)) {
         bool ok = fs::create_directory(dir);
@@ -35,6 +42,8 @@ void Session::create_dir_if_not_exist(string dir) {
     }
 }
 
+/*! \brief open output file
+ */
 void Session::open_file()
 {
     string dir = datadir + fs::path::preferred_separator + std::to_string(id_);
@@ -44,7 +53,8 @@ void Session::open_file()
     output_.open(fname_ , std::ios::binary);
 }
 
-
+/*! \brief protocol based handle for received lines
+ */
 void Session::handle_line() {
     stringstream ss;
     switch(status_) {
@@ -81,6 +91,8 @@ void Session::handle_line() {
     line_ = "";
 }
 
+/*! \brief read data 
+ */
 void Session::do_read()   {
     auto self(shared_from_this());
     socket_.async_read_some(boost::asio::buffer(data_, max_length),
@@ -103,6 +115,8 @@ void Session::do_read()   {
     });
 }
 
+/*! \brief send ack to client
+ */
 void Session::send_ack(){
     auto self(shared_from_this());
     boost::asio::async_write(socket_, boost::asio::buffer("A", 1),
@@ -114,6 +128,8 @@ void Session::send_ack(){
     });
 }
 
+/*! \brief send fail to client
+ */
 void Session::send_fail(){
     auto self(shared_from_this());
     boost::asio::async_write(socket_, boost::asio::buffer("F", 1),
@@ -125,6 +141,8 @@ void Session::send_fail(){
     });
 }
 
+/*! \brief fill vector with sorted filenames 
+ */
 void Session::fill_msgfilenames() {
     std::vector<int> vdir;
 
@@ -150,6 +168,8 @@ void Session::fill_msgfilenames() {
     getindex_ = 0;
 }
 
+/*! \brief send server content to client
+ */
 void Session::send_getcontent(){
     auto self(shared_from_this());
 

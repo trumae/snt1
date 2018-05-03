@@ -9,6 +9,8 @@ Server::Server(boost::asio::io_service& io_service, short port)
     do_accept();
 }
 
+/*! \brief accept connection and start session
+ */
 void Server::do_accept() {
     acceptor_.async_accept(socket_,
                            [this](boost::system::error_code ec){

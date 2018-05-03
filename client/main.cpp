@@ -15,6 +15,8 @@ enum { max_length = 1024 };
 const string Server = "localhost";
 const string port = "1234";
 
+/*! \brief send content of file to server
+ */
 void put_text(string id, string filename)
 {
     ifstream input(filename, std::ios::binary);
@@ -58,6 +60,8 @@ void put_text(string id, string filename)
     exit(0);
 }
 
+/*! \brief request the concatened text and print on terminal
+ */
 void get_text() {
     boost::asio::io_service io_service;
     tcp::socket s(io_service);
@@ -76,29 +80,11 @@ void get_text() {
         exit(0);
     }
 
-    /*
-
-    // send content
-    char a;
-    string line;
-    while(input.read(&a, 1)) {
-        line += a;
-        if (a == '\n') {
-            size_t line_length = line.length();
-            size_t write_lenght = boost::asio::write(s, boost::asio::buffer(line, line_length));
-            if (DEBUG) cout << write_lenght << "|" << line ;
-            line = "";
-        }
-    }
-*/
-    /*    cout <<  "Waiting ack" << endl;
-    char reply;
-    boost::asio::read(s, boost::asio::buffer(&reply, 1));
-    cout << "OK - Success" << endl;
-*/
     exit(0);
 }
 
+/*! \brief print client usage
+ */
 void usage() {
     cout << "Usage: client [put|get] <option>" << endl;
     cout << " commands:" << endl;

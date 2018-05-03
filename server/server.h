@@ -12,7 +12,8 @@
 #include <boost/filesystem.hpp>
 #include <sstream>
 
-
+/*! \brief server class
+ */
 class Server {
 public:
     Server(boost::asio::io_service& io_service, short port);
